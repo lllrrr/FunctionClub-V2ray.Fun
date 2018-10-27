@@ -61,6 +61,23 @@ def restart_service():
     change_config("status", "on")
     return "OK"
 
+@app.route('/set_protocol', methods=['GET', 'POST'])
+def set_protocol():
+    items = request.args.to_dict()
+    if items['protocol'] == "1" :
+        change_config('protocol', 'vmess')
+    elif items['protocol'] == "2":
+        change_config('protocol', 'mtproto')
+    gen_server()
+    gen_client()
+    return "OK"
+
+@app.route('/set_secret', methods=['GET', 'POST'])
+def set_secret():
+    items = request.args.to_dict()
+    change_config('secret', items['secret'])
+    return "OK"
+
 
 @app.route('/set_uuid',methods=['GET', 'POST'])
 def set_uuid():
@@ -185,8 +202,8 @@ def get_info():
 
     return json_dump
 
-@app.route('/get_log')
-def get_log():
+@app.route('/get_access_log')
+def get_access_log():
     file = open('/var/log/v2ray/access.log',"r")
     content = file.read().split("\n")
     min_length = min(20,len(content))
@@ -195,6 +212,18 @@ def get_log():
     for i in range(min_length):
         string = string + content[i] + "<br>"
     return string
+
+@app.route('/get_error_log')
+def get_error_log():
+    file = open('/var/log/v2ray/error.log',"r")
+    content = file.read().split("\n")
+    min_length = min(20,len(content))
+    content = content[-min_length:]
+    string = ""
+    for i in range(min_length):
+        string = string + content[i] + "<br>"
+    return string
+
 
 
 @app.route('/gen_ssl',methods=['GET', 'POST'])

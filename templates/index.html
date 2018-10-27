@@ -6,11 +6,12 @@
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>V2ray.fun - 运行状态</title>
-    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.qrcode/1.0/jquery.qrcode.min.js"></script>
     <link rel="stylesheet" href="/static/css/mdui.min.css">
     <script src="/static/js/mdui.min.js"></script>
 </head>
-<body class="mdui-appbar-with-toolbar mdui-theme-primary-indigo mdui-theme-accent-pink mdui-loaded mdui-drawer-body-left">
+<body class="mdui-appbar-with-toolbar mdui-theme-primary-teal mdui-theme-accent-light-blue mdui-loaded mdui-drawer-body-left">
 
 <header class="mdui-appbar mdui-appbar-fixed">
     <div class="mdui-toolbar mdui-color-theme">
@@ -83,6 +84,14 @@
                         <td id="ip"></td>
                     </tr>
                     <tr>
+                        <td>主端口</td>
+                        <td id="port"></td>
+                    </tr>
+                    <tr>
+                        <td>协议类型</td>
+                        <td id="protocol"></td>
+                    </tr>
+                    <tr class="vmess-info">
                         <td>UUID</td>
                         <td>
                             <div class="mdui-row">
@@ -93,14 +102,15 @@
 
                         </td>
                     </tr>
-                    <tr>
-                        <td>主端口</td>
-                        <td id="port"></td>
-                    </tr>
+  
 
-                    <tr>
+                    <tr class="vmess-info">
                         <td>加密方式</td>
                         <td id="encrypt"></td>
+                    </tr>
+                    <tr class="mtproto-info">
+                        <td>用户秘钥</td>
+                        <td id="secret"></td>
                     </tr>
                     <tr>
                         <td>传输方式</td>
@@ -135,7 +145,7 @@
                             </div>
                         </td>
                     </tr>
-                    <tr>
+                    <tr class="vmess-info">
                         <td>
                             <div class="mdui-row">
                                     <label class="mdui-textfield-label">Vmess：</label>
@@ -144,11 +154,11 @@
                         </td>
                         <td>
                             <div class="mdui-row">
-                                    <img id="vmess_qr" class="mdui-img-rounded" src=""/>
+                                    <div id="vmess_qr"></div>
                             </div>
                         </td>
                     </tr>
-                    <tr>
+                    <tr class="vmess-info">
                         <td>
                             <div class="mdui-row">
                                 <button onclick="open_vmess()" class="mdui-btn mdui-btn-block mdui-color-theme-500 mdui-ripple">打开Vmess链接</button>
@@ -185,12 +195,46 @@
         {
             document.getElementById('stop').removeAttribute('hidden');
         }
-        document.getElementById('ip').innerHTML = data["ip"];
-        document.getElementById('uuid').value = data["uuid"];
-        document.getElementById('port').innerHTML = data["port"];
-        document.getElementById('encrypt').innerHTML = data["encrypt"];
-        document.getElementById('trans').innerHTML = data["trans"];
+        document.getElementById('protocol').innerHTML = data['protocol']
+        if (data['protocol'] === "vmess") {
+            $('.vmess-info').removeAttr("style");
+            $('.mtproto-info').css("display", "none");
+            document.getElementById('uuid').value = data["uuid"];
+            document.getElementById('encrypt').innerHTML = data["encrypt"];
+            var raw_vmess_link = data["encrypt"] + ":" + data["uuid"] + "@" + data["ip"] + ":" + data["port"];
 
+            var vmess_link = "vmess://" + btoa(raw_vmess_link) + "?network=";
+
+            if(data["trans"].startsWith("mkcp"))
+            {
+                vmess_link += "kcp";
+            }
+            else if(data["trans"].startsWith("websocket"))
+            {
+                vmess_link += "ws";
+            }
+            else if(data["trans"].startsWith("tcp"))
+            {
+                vmess_link += "tcp";
+            }
+            document.getElementById('vmess_link').innerHTML = vmess_link;
+
+            $('#vmess_qr').qrcode({
+                width: 200,
+                    height: 200,
+                text: vmess_link
+            });
+        } else if (data['protocol'] === "mtproto"){
+            $('.vmess-info').css("display", "none");
+            $('.mtproto-info').removeAttr("style");
+            document.getElementById('secret').innerHTML = data['secret']
+        }
+        document.getElementById('ip').innerHTML = data["ip"];
+       
+        document.getElementById('port').innerHTML = data["port"];
+        
+        document.getElementById('trans').innerHTML = data["trans"];
+        
         if(data["tls"] === "on")
         {
             document.getElementById('tls_on').removeAttribute('hidden');
@@ -209,27 +253,7 @@
             document.getElementById('mux_off').removeAttribute('hidden');
         }
 
-        var raw_vmess_link = data["encrypt"] + ":" + data["uuid"] + "@" + data["ip"] + ":" + data["port"];
-
-        var vmess_link = "vmess://" + btoa(raw_vmess_link) + "?network=";
-
-        if(data["trans"].startsWith("mkcp"))
-        {
-            vmess_link += "kcp";
-        }
-        else if(data["trans"].startsWith("websocket"))
-        {
-            vmess_link += "ws";
-        }
-        else if(data["trans"].startsWith("tcp"))
-        {
-            vmess_link += "tcp";
-        }
-        document.getElementById('vmess_link').innerHTML = vmess_link;
-
-        let vmess_qr_src = "https://pan.baidu.com/share/qrcode?w=150&h=150&url="+vmess_link;
-
-        document.getElementById('vmess_qr').setAttribute('src',vmess_qr_src);
+        
 
     });
 
